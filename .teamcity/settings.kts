@@ -1,93 +1,33 @@
 import jetbrains.buildServer.configs.kotlin.v2019_2.*
-import jetbrains.buildServer.configs.kotlin.v2019_2.buildFeatures.dockerSupport
-import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.MavenBuildStep
-import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.dockerCommand
-import jetbrains.buildServer.configs.kotlin.v2019_2.buildSteps.maven
-import jetbrains.buildServer.configs.kotlin.v2019_2.triggers.vcs
+
+/*
+The settings script is an entry point for defining a single
+TeamCity project. TeamCity looks for the 'settings.kts' file in a
+project directory and runs it if it's found, so the script name
+shouldn't be changed and its package should be the same as the
+project's id.
+
+The script should contain a single call to the project() function
+with a Project instance or an init function as an argument.
+
+VcsRoots, BuildTypes, and Templates of this project must be
+registered inside project using the vcsRoot(), buildType(), and
+template() methods respectively.
+
+Subprojects can be defined either in their own settings.kts or by
+calling the subProjects() method in this project.
+
+To debug settings scripts in command-line, run the
+
+    mvnDebug org.jetbrains.teamcity:teamcity-configs-maven-plugin:generate
+
+command and attach your debugger to the port 8000.
+
+To debug in IntelliJ Idea, open the 'Maven Projects' tool window (View ->
+Tool Windows -> Maven Projects), find the generate task
+node (Plugins -> teamcity-configs -> teamcity-configs:generate),
+the 'Debug' option is available in the context menu for the task.
+*/
 
 version = "2019.2"
-
-project {
-    buildType(MessagingBuild)
-    buildType(Deploy)
-}
-
-object MessagingBuild : BuildType({
-    name = "Build"
-
-    publishArtifacts = PublishMode.SUCCESSFUL
-
-    vcs {
-        root(DslContext.settingsRoot)
-    }
-
-    steps {
-        maven {
-            goals = "clean package"
-            runnerArgs = "-Dmaven.test.failure.ignore=true"
-            localRepoScope = MavenBuildStep.RepositoryScope.MAVEN_DEFAULT
-            jdkHome = "%env.JDK_11%"
-        }
-        dockerCommand {
-            commandType = build {
-                source = file {
-                    path = "Dockerfile"
-                }
-                namesAndTags = "artemkulish/demo4:messaging"
-                commandArgs = "--pull"
-            }
-            param("dockerImage.platform", "linux")
-        }
-        dockerCommand {
-            commandType = push {
-                namesAndTags = "artemkulish/demo4:messaging"
-            }
-            param("dockerfile.path", "Dockerfile")
-        }
-    }
-
-    triggers {
-        vcs {
-        }
-    }
-
-    features {
-        dockerSupport {
-            loginToRegistry = on {
-                dockerRegistryId = "PROJECT_EXT_5"
-            }
-        }
-    }
-})
-
-object Deploy : BuildType({
-    name = "Deploy"
-
-    enablePersonalBuilds = false
-    type = BuildTypeSettings.Type.DEPLOYMENT
-    maxRunningBuilds = 1
-
-    vcs {
-        root(DslContext.settingsRoot)
-    }
-
-    steps {
-        step {
-            type = "ssh-exec-runner"
-            param("jetbrains.buildServer.sshexec.command", "ls")
-            param("jetbrains.buildServer.deployer.targetUrl", "35.184.252.223")
-            param("jetbrains.buildServer.sshexec.authMethod", "DEFAULT_KEY")
-            param("jetbrains.buildServer.sshexec.keyFile", "/home/artemkulish123/")
-        }
-    }
-
-    triggers {
-        vcs {
-        }
-    }
-
-    dependencies {
-        snapshot(MessagingBuild) {
-        }
-    }
-})
+project(_Self.Project)

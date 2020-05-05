@@ -148,7 +148,7 @@
                 		</configuration>
 	  	 	</plugin>	
 		</plugins>
-		<finalName>kick-scooter-payment</finalName>
+		<finalName>kick-scooter-messaging</finalName>
 	</build>
 
 </project>
